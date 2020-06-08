@@ -38,7 +38,8 @@ var commands = {
     'gestures': function(request, sender, sendResponse) {
         gestures = {};
         for (var i = 0; i < localStorage.length; i++) {
-            gestures[key] = localStorage.key(i);
+            var key = localStorage.key(i);
+            gestures[key] = localStorage[key];
         }
         sendResponse({resp: gestures});
     },
