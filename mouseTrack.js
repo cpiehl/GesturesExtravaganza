@@ -39,33 +39,23 @@ function invertHash(hash) {
 
 document.onmousedown = function(event) {
     mousedown[event.which] = true;
+    if (false === loaded) {
+        loadOptions();
+        loaded = true;
+    }
 
     // left rock
-    if (event.which === MouseButtons.Left && mousedown[MouseButtons.Right] && suppress && rocker) {
-        if (false === loaded) {
-            loadOptions();
-            loaded = true;
-        }
+    if (event.which === MouseButtons.Left && mousedown[MouseButtons.Right] && rocker) {
         move = 'back';
-        rocked = true;
         exeRock();
     }
 
     // right mouse click
-    else if (event.which === MouseButtons.Right && suppress) {
-        if (false === loaded) {
-            loadOptions();
-            loaded = true;
-        }
+    else if (event.which === MouseButtons.Right) {
 
         // right rock
         if (mousedown[MouseButtons.Left] && rocker) {
-            if (false === loaded) {
-                loadOptions();
-                loaded = true;
-            }
             move = 'forward';
-            rocked = true;
             exeRock();
         }
         else {
@@ -142,13 +132,15 @@ document.onmouseup = function(event) {
 };
 
 function exeRock() {
-    action = move;
-    if (action === "back") {
+    if (move === "back") {
         window.history.back();
     }
-    else if (action === "forward") {
+    else if (move === "forward") {
         window.history.forward();
     }
+
+    rocked = true;
+    suppress = true;
 }
 
 function exeFunc() {
