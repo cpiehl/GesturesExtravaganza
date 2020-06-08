@@ -1,4 +1,4 @@
-miniGestures
+GesturesExtravaganza
 =============
 
-This is a google chrome extension which enables basic mouse gestures for navigation
+This is a Firefox extension which enables basic mouse gestures for navigation
