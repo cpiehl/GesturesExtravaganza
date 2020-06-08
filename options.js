@@ -17,10 +17,11 @@
 
 
 defaultGestures = {
-    "D":"newtab",
-    "R":"forward",
-    "L":"back",
-    "DR":"closetab",
+    "D" : "newtab",
+    "R" : "forward",
+    "L" : "back",
+    "DR": "closetab",
+    "DU": "clonetab",
 };
 
 commandTrans = {
@@ -41,24 +42,20 @@ commandTrans = {
     "Re-open Last Closed Tab":"lasttab",
 };
 
+function invertHash(hash) {
+    inv = {};
+    for (var key in hash)
+        inv[hash[key]] = key;
+    return inv;
+}
+
 function fillMenu() {
-    var key, div, tr, td, select, inp, img, a;
-    gestures = {};
+    var table, tr, td, inp;
 
-    for (key in localStorage) {
-        if (key === "colorCode" || key === "width") {
-            continue;
-        }
-        gestures[key] = localStorage[key];
-    }
+    table = document.getElementById("optsTab");
 
-    if (Object.keys(gestures).length === 0)
-        gestures = invertHash(defaultGestures);
-
-    div = document.getElementById("optsTab");
-
-    for (key in commandTrans) {
-        tr = div.insertRow(div.rows.length);
+    for (var key in commandTrans) {
+        tr = table.insertRow(table.rows.length);
         td = document.createElement('td');
         td.appendChild(document.createTextNode(key));
         tr.appendChild(td);
@@ -66,8 +63,9 @@ function fillMenu() {
         inp = document.createElement('input');
         inp.type = 'text';
 
-        if (gestures[commandTrans[key]])
+        if (gestures[commandTrans[key]]) {
             inp.value = gestures[commandTrans[key]];
+        }
 
         td.align = 'center';
         tr.appendChild(td);
@@ -77,8 +75,8 @@ function fillMenu() {
 
 
 // Saves options to localStorage.
-function save_options() {
-    var select, value;
+function saveOptions() {
+    var select;
 
     select = document.getElementById("width");
     localStorage.width = select.children[select.selectedIndex].value;
@@ -106,21 +104,42 @@ function save_options() {
 
 // Restores select box state to saved value from localStorage.
 function restoreOptions() {
-	var rocker = document.getElementById("rocker");
-    rocker.checked = localStorage.rocker === "true";
+    var i;
 
-    var select = document.getElementById("width");
+	var rocker = document.getElementById("rocker");
+    rocker.checked = localStorage.rocker == 'true';
+
+    var select = document.getElementById('width');
 	var value = localStorage.width;
-	if(!value) {
+	if (false === value) {
 		value = 3;
 	}
-	for(var ii = 0; ii < select.children.length; ii++) {
-		var child2 = select.children[ii];
-		if(child2.value === value) {
+	for (i = 0; i < select.children.length; i++) {
+		var child2 = select.children[i];
+		if (child2.value === value) {
 			child2.selected = "true";
 			break;
 		}
-	}
+    }
+
+    gestures = {};
+
+    for (i = 0; i < localStorage.length; i++){
+        // if (Object.keys(commandTrans).findIndex((c) => key === c) >= 0) {
+        //     console.log(key);
+        // }
+        var key = localStorage.key(i);
+        if (key === 'colorCode' || key === 'width') {
+            continue;
+        }
+        gestures[key] = localStorage[key];
+    }
+
+    if (Object.keys(gestures).length === 0) {
+        console.log("loading default gestures");
+        gestures = invertHash(defaultGestures);
+    }
+    console.log(gestures);
 }
 
 function loadInfo() {
@@ -129,4 +148,4 @@ function loadInfo() {
 }
 
 document.addEventListener('DOMContentLoaded', loadInfo);
-document.querySelector('#save').addEventListener('click', save_options);
+document.getElementById('save').addEventListener('click', saveOptions);
