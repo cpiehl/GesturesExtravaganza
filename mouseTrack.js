@@ -15,334 +15,214 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.   
 */
 
-var rmousedown=false, moved=false, lmousedown=false
-var rocker=false, trail=false
-var mx,my,nx,ny,lx,ly,phi
-var move="", omove=""
-var pi =3.14159
-var suppress=1
-var canvas, myGests, ginv
-var link, ls, myColor="red", myWidth=3
-var loaded=false
-var rocked=false
-var link=null
+var MouseButtons = Object.freeze({"Left":1, "Middle":2, "Right":3,});
 
-function invertHash(hash)
-{
-    inv = {}
-    for(key in hash)
-        inv[hash[key]] = key
-    return inv
+var mousedown = [false, false, false];
+var moved = false;
+var rocker = false;
+var mx, my, nx, ny, lx, ly, phi;
+var move = '', omove = '';
+var tau = 2 * Math.PI;
+var quarterPi = Math.PI / 4.0;
+var suppress = true;
+var myGestures, gestures_inv;
+var loaded = false;
+var rocked = false;
+var link = null;
+
+function invertHash(hash) {
+    inv = {};
+    for (var key in hash)
+        inv[hash[key]] = key;
+    return inv;
 }
 
-function createCanvas()
-{
-    canvas = document.createElement('canvas');
-    canvas.id = "gestCanvas"
-    canvas.style.width=document.body.scrollWidth
-    canvas.style.height=document.body.scrollHeight
-    canvas.width=window.document.body.scrollWidth
-    canvas.height=window.document.body.scrollHeight     
-    canvas.style.left="0px";
-    canvas.style.top="0px";
-    canvas.style.overflow = 'visible';
-    canvas.style.position = 'absolute';
-    canvas.style.zIndex="10000"
-}
-function draw(x,y){
-    var ctx = document.getElementById('gestCanvas').getContext('2d');
-    ctx.beginPath();
-    ctx.strokeStyle = myColor
-    ctx.lineWidth = myWidth
-    ctx.moveTo(lx,ly);
-    ctx.lineTo(x,y);
-    ctx.stroke()
-    lx=x
-    ly=y
-}
+document.onmousedown = function(event) {
+    mousedown[event.which] = true;
 
-document.onmousedown = function(event){
-    if(event.which == 1){
-        lmousedown = true
-    }
-    else if(event.which == 3){
-        rmousedown = true
-    }
-
-    //leftrock
-    if(event.which == 1 && rmousedown && suppress && rocker){
-        if(! loaded){
-            loadOptions()
-            loaded=true
+    // left rock
+    if (event.which === MouseButtons.Left && mousedown[MouseButtons.Right] && suppress && rocker) {
+        if (false === loaded) {
+            loadOptions();
+            loaded = true;
         }
-        move = 'back'
-        rocked = true
-        // console.log(rocked)
-        exeRock()
+        move = 'back';
+        rocked = true;
+        exeRock();
     }
 
-    // console.log('rmousedown '+suppress)
-    //right mouse click
-    else if(event.which == 3 && suppress){
-        if(! loaded){
-            loadOptions()
-            loaded=true
+    // right mouse click
+    else if (event.which === MouseButtons.Right && suppress) {
+        if (false === loaded) {
+            loadOptions();
+            loaded = true;
         }
-        if(lmousedown && rocker){
-            if(! loaded){
-                loadOptions()
-                loaded=true
+
+        // right rock
+        if (mousedown[MouseButtons.Left] && rocker) {
+            if (false === loaded) {
+                loadOptions();
+                loaded = true;
             }
-            move = 'forward'
-            rocked = true
-            // console.log(rocked)
-            exeRock()
+            move = 'forward';
+            rocked = true;
+            exeRock();
         }
-        else{
+        else {
             my = event.pageX;
             mx = event.pageY;
-            lx = my
-            ly = mx
-            move = ""
-            omove=""
-            moved=false
-            if(event.target.href){
-                link = event.target.href
+            lx = my;
+            ly = mx;
+            move = '';
+            omove = '';
+            moved = false;
+            if (event.target.href) {
+                link = event.target.href;
             }
-            else if(event.target.parentElement.href){
-                link = event.target.parentElement.href
+            else if (event.target.parentElement.href) {
+                link = event.target.parentElement.href;
             }
-            else{
-                link = null
+            else {
+                link = null;
             }
         }
     }
-
 };
 
-document.onmousemove = function(event)
-{
-    //track the mouse if we are holding the right button
-    if(rmousedown)
-    {
+document.onmousemove = function(event) {
+    // track the mouse if we are holding the right button
+    if (mousedown[MouseButtons.Right]) {
         ny = event.pageX;
         nx = event.pageY;
-        var r = Math.sqrt(Math.pow(nx-mx,2)+Math.pow(ny-my,2))
-        if(r > 16)
-        {
-            phi = Math.atan2(ny-my,nx-mx)
-            if(phi < 0) phi += 2.*pi
-            if(phi >= pi/4. && phi < 3.*pi/4.)
-                var tmove="R"
-            else if(phi >= 3.*pi/4. && phi < 5.*pi/4.)
-                var tmove="U"
-            else if(phi >= 5.*pi/4. && phi < 7.*pi/4.)
-                var tmove="L"
-            else if(phi >= 7.*pi/4. || phi < pi/4.)
-                var tmove="D"
-            if(tmove != omove)
-            {
-                move += tmove
-                omove = tmove
-            }
-            if(moved == false)
-            {
-                // console.log('making canvas')
-                createCanvas()
-                document.body.appendChild(canvas);
-            }
-            moved=true
-            console.log('indraw'+trail)
+        var distance2 = Math.pow(nx - mx, 2) + Math.pow(ny - my, 2);
 
-            if(trail){
-                console.log('draw')
-                draw(ny,nx)
+        if (distance2 > 256) {
+            var tmove = '';
+            phi = Math.atan2(ny - my, nx - mx);
+            if (phi < 0)
+                phi += tau;
+            if (phi >= quarterPi && phi < 3.0 * quarterPi)
+                tmove = 'R';
+            else if (phi >= 3.0 * quarterPi && phi < 5.0 * quarterPi)
+                tmove = 'U';
+            else if (phi >= 5.0 * quarterPi && phi < 7.0 * quarterPi)
+                tmove = 'L';
+            else if (phi >= 7.0 * quarterPi || phi < quarterPi)
+                tmove = 'D';
+
+            if (tmove != omove) {
+                move += tmove;
+                omove = tmove;
             }
 
-            mx = nx
-            my = ny
+            moved = true;
+
+            mx = nx;
+            my = ny;
         }
     }
 };
 
+document.onmouseup = function(event) {
+    mousedown[event.which] = false;
 
-document.onmouseup = function(event)
-{
-    // console.log('mouse is up '+suppress)
-    if(event.which == 1)
-        lmousedown = false
-
-    //right mouse release
-    if(event.which == 3){
-        // console.log('suppress is '+suppress)
-        rmousedown=false
-        if(moved){
-            cvs = document.getElementById('gestCanvas')
-            if(cvs)
-            {
-                // document.body.removeChild(link)
-                document.body.removeChild(canvas)
-                cvs.width = cvs.width;
-            }
-            exeFunc()
+    // right mouse release
+    if (event.which === MouseButtons.Right) {
+        if (moved) {
+            exeFunc(); // perform right click gesture
         }
-        else if(rocked){
-            rocked = false
+        else if (rocked) {
+            rocked = false;
         }
-        else{
-            --suppress
-            // console.log('no move '+suppress)
-            $('#target').rmousedown(which=3);
+        else {
+            suppress = false;
+            document.getElementById('target').mousedown({which: 3});
         }
     }
 };
-function exeRock()
-{
-    action = move
-    if(action == "back")
-    {
-        window.history.back()
+
+function exeRock() {
+    action = move;
+    if (action === "back") {
+        window.history.back();
     }
-    else if(action == "forward")
-    {
-        window.history.forward()
+    else if (action === "forward") {
+        window.history.forward();
     }
 }
 
-function exeFunc()
-{
-    // console.log('exeFunc '+move)
-    if(ginv[move])
-    {
-        action = ginv[move]
-        if(action == "back")
-        {
-            window.history.back()
+function exeFunc() {
+    
+    if (gestures_inv[move]) {
+        action = gestures_inv[move];
+        if (action === "back") {
+            window.history.back();
         }
-        else if(action == "forward")
-        {
-            window.history.forward()
+        else if (action === "forward") {
+            window.history.forward();
         }
-        else if(action == "newtab")
-        {
-            if(link == null){
-                chrome.extension.sendMessage({msg: "newtab"}, 
-                    function(response)
-                    {
-                        if(response != null)
-                            console.log(response.resp);
-                        else
-                        {
-                            console.log('problem executing open tab')
-                            if(chrome.extension.lastError)
-                                console.log(chrome.extension.lastError.message)
+        else if (action === "newtab") {
+            if (link === null) {
+                browser.runtime.sendMessage({msg: "newtab"}, function(response) {
+                    if (response !== null) {
+                        console.log(response.resp);
+                    }
+                    else {
+                        console.log('problem executing open tab');
+                        if (chrome.extension.lastError) {
+                            console.log(chrome.extension.lastError.message);
                         }
-                    });
+                    }
+                });
             }
-            else{
-                window.open(link)
+            else {
+                window.open(link);
             }
         }
-        else if(action == "closetab"){
-            chrome.extension.sendMessage({msg: "closetab"});
+        else if (action === "scrolltop") {
+            window.scrollTo(0, 0);
         }
-        else if(action == "lasttab"){
-            chrome.extension.sendMessage({msg: "lasttab"});
+        else if (action === "scrollbottom") {
+            window.scrollTo(0, document.body.scrollHeight);
         }
-        else if(action == "reloadall"){
-            chrome.extension.sendMessage({msg: "reloadall"});
+        else if (action === "reload") {
+            window.location.reload();
         }
-
-        else if(action == "closeall"){
-            chrome.extension.sendMessage({msg: "closeall"});
-        }
-
-        else if(action == "nexttab") {
-            chrome.extension.sendMessage({msg: "nexttab"});
+        else if (action === "stop") {
+            window.stop();
         }
 
-        else if(action == "prevtab"){
-            chrome.extension.sendMessage({msg: "prevtab"});
+        // if nothing else, pass action on to background.js
+        else {
+            browser.runtime.sendMessage({msg: action});
         }
-
-        else if(action == "closeback"){
-            chrome.extension.sendMessage({msg: "closeback"});
-        }
-
-
-        else if(action == "scrolltop") 
-            window.scrollTo(0,0)
-
-        else if(action == "scrollbottom") 
-            window.scrollTo(0,document.body.scrollHeight)
-
-        else if(action == "reload")
-            window.location.reload()
-
-        else if(action == "stop")
-            window.stop()
-
     }
 }
 
-
-document.oncontextmenu = function()
-{
-    // console.log('ctx menu suppress is '+suppress)
-    if(suppress)
-        return false
-    else{
-        // console.log("open it");
-        suppress++
-        return true
+document.oncontextmenu = function(e) {
+    if (suppress) {
+        console.log('oncontextmenu suppress');
+        e.preventDefault();
+        return false;
+    }
+    else {
+        console.log('oncontextmenu allow');
+        suppress = true;
+        return true;
     }
 };
 
-function loadOptions(name)
-{
-    chrome.extension.sendMessage({msg: "colorCode"}, 
-        function(response) {
-            if(response){
-                // console.log('color'+response.resp)
-                myColor = response.resp
-            }
-            // else
-            //     console.log('error getting colorCode')
-        });
-    chrome.extension.sendMessage({msg: "width"}, 
-        function(response) {
-            if(response){
-                myWidth = response.resp
-                // console.log('width '+myWidth)
-            }
-            // else
-            //     console.log('error getting width')
-        });
-    chrome.extension.sendMessage({msg: "gests"}, 
-        function(response) 
-        {
-            if(response)
-                myGests = response.resp
-            ginv = invertHash(myGests)
-        });
+function loadOptions(name) {
 
-    chrome.extension.sendMessage({msg: "rocker"}, 
-        function(response) 
-        {
-            if(response)
-                rocker = response.resp
-            if(rocker == 'true') rocker = true
-            else rocker = false
-        });
+    browser.runtime.sendMessage({msg: "gestures"}, function(response) {
+        if (response) {
+            gestures_inv = invertHash(response.resp);
+        }
+    });
 
-    chrome.extension.sendMessage({msg: "trail"}, 
-        function(response) 
-        {
-            if(response)
-                trail = response.resp
-            if(trail == 'true') trail = true
-            else trail = false
-        });
+    browser.runtime.sendMessage({msg: "rocker"}, function(response) {
+        rocker = response && response.resp == 'true';
+    });
 }
 
 document.addEventListener('DOMContentLoaded', loadOptions);
